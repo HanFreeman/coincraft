@@ -1,0 +1,7 @@
+{
+    "require": {
+        "phpseclib/phpseclib": "^3.0",
+        "mdanter/ecc": "^1.0",
+        "defuse/php-encryption": "^2.4"
+    }
+}

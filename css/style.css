@@ -1,0 +1,68 @@
+/* R‚initialisation de quelques styles pour assurer la coh‚rence */
+body, h1, h2, h3, h4, h5, h6, p, ul, ol, figure, figcaption {
+    margin: 0;
+    padding: 0;
+}
+
+/* Styles de base pour le corps du document */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #121212; /* Fond sombre */
+    color: #FFFFFF; /* Texte blanc pour un contraste ‚lev‚ */
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* Conteneur g‚n‚ral pour centrer le contenu */
+.container {
+    max-width: 800px;
+    margin: auto;
+}
+
+/* Styles des titres pour ajouter des nuances de bleu */
+h1, h2, h3, h4, h5, h6 {
+    color: #007BFF; /* Bleu vif */
+}
+
+/* Styles pour les paragraphes */
+p {
+    margin-bottom: 20px;
+}
+
+/* Styles pour les listes */
+ul, ol {
+    margin-bottom: 20px;
+}
+
+/* Styles pour les liens pour les rendre bleus et plus visibles */
+a {
+    color: #0096FF; /* Bleu clair */
+    text-decoration: none; /* Supprime le soulignement par d‚faut */
+}
+
+a:hover, a:focus {
+    text-decoration: underline; /* Ajoute un soulignement au survol ou au focus pour une meilleure accessibilit‚ */
+}
+
+/* Styles pour les boutons avec un fond bleu */
+button {
+    background-color: #007BFF; /* Bleu vif */
+    color: #FFFFFF; /* Texte blanc */
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 5px; /* Bords arrondis pour les boutons */
+}
+
+button:hover {
+    background-color: #0056b3; /* Bleu un peu plus fonc‚ au survol */
+}
+
+/* Styles pour les images */
+img {
+    max-width: 100%; /* Assure que les images ne d‚bordent pas de leur conteneur */
+    height: auto; /* Garde les proportions des images */
+}
+
+/* Ajoutez ici d'autres styles sp‚cifiques … votre projet */

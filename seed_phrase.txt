@@ -1,0 +1,15 @@
+abandon chalk dash excess guide pencil point pole ritual spider tragic woman
+
+
+Structure Hi‚rarchique Simplifi‚e
+Niveau 0 (Racine) : Cl‚ maŒtresse g‚n‚r‚e … partir de la seed phrase.
+
+Niveau 1 : Paires de cl‚s d‚riv‚es de la cl‚ maŒtresse. Dans l'exemple, une seule paire de cl‚s est g‚n‚r‚e pour simplifier, 
+mais en pratique, vous pourriez avoir plusieurs branches … ce niveau pour diff‚rents usages (par exemple, paiements, changements, etc.).
+
+Comment Utiliser Cette Structure
+La cl‚ maŒtresse sert de racine … toute la hi‚rarchie. Elle est g‚n‚r‚e directement … partir de la seed phrase … l'aide de techniques de hachage et de cryptographie … courbes elliptiques, 
+fournissant une base s‚curis‚e pour la d‚rivation de cl‚s suppl‚mentaires.
+
+Les paires de cl‚s d‚riv‚es … partir de cette cl‚ maŒtresse sont utilis‚es pour les transactions ou autres op‚rations sp‚cifiques au sein de la blockchain. 
+Cela permet une s‚paration des responsabilit‚s et une organisation logique des cl‚s au sein de votre systŠme
