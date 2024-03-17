@@ -4,76 +4,113 @@ namespace CroinCraft\Blockchain;
 
 use DateTime;
 use SQLite3;
+use Exception;
+use Mdanter\Ecc\EccFactory;
+use Mdanter\Ecc\Crypto\Signature\Signer;
+use Defuse\Crypto\Crypto;
+use Defuse\Crypto\Key;
 
+// Classe Transaction définissant la structure et le comportement d'une transaction dans la blockchain CroinCraft.
 class Transaction {
-    public $inputs;         // Entrées de la transaction (références aux sorties précédentes)
-    public $outputs;        // Sorties de la transaction (destinataires et montants)
-    public $amount;         // Montant total de la crypto-monnaie à transférer
-    public $transactionFee; // Frais de transaction
-    public $signature;      // Signature numérique pour authentifier la transaction
+    public $inputs;         // Références aux sorties des transactions précédentes
+    public $outputs;        // Destinataires et montants des sorties de la transaction
+    public $version;        // Version de la transaction, pour compatibilité future
+    public $locktime;       // Temps ou numéro de bloc à partir duquel la transaction est valide
+    public $signature;      // Signature numérique de la transaction
     public $timestamp;      // Horodatage de la transaction
 
-    // Constructeur pour initialiser une nouvelle transaction
-    public function __construct($inputs, $outputs, $amount, $transactionFee) {
+    // Constructeur pour initialiser une transaction avec ses propriétés de base
+    public function __construct($inputs, $outputs, $version = 1, $locktime = 0) {
         $this->inputs = $inputs;
         $this->outputs = $outputs;
-        $this->amount = $amount;
-        $this->transactionFee = $transactionFee;
-        $this->timestamp = (new DateTime())->getTimestamp(); // Générer l'horodatage actuel
-        $this->signature = ''; // Sera défini après la signature de la transaction
+        $this->version = $version;
+        $this->locktime = $locktime;
+        $this->timestamp = (new DateTime())->getTimestamp();
+        $this->signature = ''; // Sera généré lors de la signature de la transaction
     }
 
-    // Fonction pour signer la transaction avec la clé privée
-    public function signTransaction($privateKey) {
-        // La logique pour signer la transaction en utilisant votre bibliothèque de cryptographie
-        $dataToSign = $this->getTransactionData(); // Préparer les données à signer
-        $this->signature = "signature_placeholder"; // Simuler une signature pour l'exemple
+    // Fonction pour signer la transaction à l'aide de la clé privée du créateur
+    public function signTransaction($publicKey, $password) {
+        $dbPath = __DIR__ . '/../data/wallet.db'; // Chemin vers la base de données des portefeuilles
+        $db = new SQLite3($dbPath);
+
+        // Requête pour récupérer la clé privée chiffrée et la clé de chiffrement associée
+        $query = $db->prepare("SELECT private_key_encrypted, encryption_key FROM wallet WHERE public_key = :publicKey");
+        $query->bindValue(':publicKey', $publicKey);
+        $result = $query->execute();
+
+        if ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+            try {
+                // Déchiffrement de la clé privée avec le mot de passe de l'utilisateur
+                $encryptionKey = Key::loadFromAsciiSafeString($row['encryption_key']);
+                $privateKeyEncrypted = $row['private_key_encrypted'];
+                $privateKeySerialized = Crypto::decryptWithPassword($privateKeyEncrypted, $password, $encryptionKey);
+
+                // Récupération de l'objet PrivateKey à partir de sa forme sérialisée
+                $adapter = EccFactory::getAdapter();
+                $generator = EccFactory::getSecgCurves()->generator256k1();
+                $privateKey = $generator->createPrivateKeyFrom(gmp_strval(gmp_init(bin2hex($privateKeySerialized), 16)));
+
+                // Préparation des données de la transaction à signer
+                $dataToSign = $this->getTransactionData();
+
+                // Signature de la transaction
+                $signer = new Signer($adapter);
+                $hash = hash('sha256', $dataToSign, true);
+                $signature = $signer->sign($privateKey, gmp_init(bin2hex($hash), 16));
+
+                // Stockage de la signature dans une forme exploitable
+                $this->signature = bin2hex($signature->getR()) . bin2hex($signature->getS());
+            } catch (Exception $e) {
+                throw new Exception("Erreur lors de la signature de la transaction : " . $e->getMessage());
+            }
+        } else {
+            throw new Exception("Portefeuille non trouvé.");
+        }
     }
 
-    // Fonction pour rassembler les données de la transaction en vue de leur signature ou d'autres utilisations
+    // Compilation des données de la transaction pour la signature ou d'autres usages
     private function getTransactionData() {
         return json_encode([
             'inputs' => $this->inputs,
             'outputs' => $this->outputs,
-            'amount' => $this->amount,
-            'transactionFee' => $this->transactionFee,
+            'version' => $this->version,
+            'locktime' => $this->locktime,
             'timestamp' => $this->timestamp
         ]);
     }
 
-    // Fonction pour valider la transaction avant son ajout au bloc
+    // Validation de la transaction avant son ajout à un bloc ou au mempool
     public function validateTransaction() {
-        // La logique de validation de la transaction, y compris la vérification de la signature
-        return true; // Simuler une transaction valide pour l'exemple
+        // La logique de validation de la transaction devrait être ici
+        return true; // Ici, on simule une validation réussie pour l'exemple
     }
 
-    // Méthode pour sauvegarder la transaction dans le mempool
+    // Enregistrement de la transaction dans le mempool une fois validée
     public function saveToMempool($dbPath) {
         $db = new SQLite3($dbPath);
-        
-        // Création de la table mempool si elle n'existe pas déjà
+
+        // Crée la table mempool si nécessaire
         $db->exec("CREATE TABLE IF NOT EXISTS mempool (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             inputs TEXT,
             outputs TEXT,
-            amount REAL,
-            transactionFee REAL,
+            version INTEGER,
+            locktime INTEGER,
             signature TEXT,
             timestamp INTEGER
         )");
 
-        // Préparation de la requête pour insérer la transaction dans le mempool
-        $stmt = $db->prepare("INSERT INTO mempool (inputs, outputs, amount, transactionFee, signature, timestamp) VALUES (:inputs, :outputs, :amount, :transactionFee, :signature, :timestamp)");
-
-        // Liaison des paramètres
+        // Insertion de la transaction dans le mempool
+        $stmt = $db->prepare("INSERT INTO mempool (inputs, outputs, version, locktime, signature, timestamp) VALUES (:inputs, :outputs, :version, :locktime, :signature, :timestamp)");
         $stmt->bindValue(':inputs', json_encode($this->inputs));
         $stmt->bindValue(':outputs', json_encode($this->outputs));
-        $stmt->bindValue(':amount', $this->amount);
-        $stmt->bindValue(':transactionFee', $this->transactionFee);
+        $stmt->bindValue(':version', $this->version);
+        $stmt->bindValue(':locktime', $this->locktime);
         $stmt->bindValue(':signature', $this->signature);
         $stmt->bindValue(':timestamp', $this->timestamp);
 
-        // Exécution de la requête
         $stmt->execute();
     }
 }
+?>
